@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import Settings from './Settings'
 import styles from '../styles/App.module.css'
 
 function Calculator() {
@@ -8,10 +9,26 @@ function Calculator() {
   const [history, setHistory] = useState([])
   const [lastResult, setLastResult] = useState(null)
   const [scientificMode, setScientificMode] = useState(false)
-  const [soundEnabled, setSoundEnabled] = useState(true)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [settings, setSettings] = useState({
+    soundEnabled: true,
+    historyEnabled: true,
+    particlesEnabled: true,
+    keyboardEnabled: true,
+    scientificByDefault: false,
+    darkMode: true
+  })
+
+  useEffect(() => {
+    setScientificMode(settings.scientificByDefault)
+  }, [settings.scientificByDefault])
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', settings.darkMode ? 'dark' : 'light')
+  }, [settings.darkMode])
 
   const playSound = (type) => {
-    if (!soundEnabled) return
+    if (!settings.soundEnabled) return
 
     const audio = new Audio()
     switch (type) {
@@ -132,7 +149,9 @@ function Calculator() {
         ? result.toString()
         : parseFloat(result.toFixed(8)).toString()
       
-      setHistory(prev => [...prev, `${fullEquation} = ${formattedResult}`].slice(-5))
+      if (settings.historyEnabled) {
+        setHistory(prev => [...prev, `${fullEquation} = ${formattedResult}`].slice(-5))
+      }
       setLastResult(formattedResult)
       setDisplay(formattedResult)
       setEquation('')
@@ -180,6 +199,8 @@ function Calculator() {
   }
 
   const handleKeyboard = useCallback((event) => {
+    if (!settings.keyboardEnabled) return
+
     const { key } = event
     if (/[0-9.]/.test(key)) {
       handleNumber(key)
@@ -192,7 +213,7 @@ function Calculator() {
     } else if (key === 'Backspace') {
       handleBackspace()
     }
-  }, [display, equation])
+  }, [display, equation, settings.keyboardEnabled])
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyboard)
@@ -200,77 +221,84 @@ function Calculator() {
   }, [handleKeyboard])
 
   return (
-    <div className={styles.calculator}>
-      <div className={styles.history}>
-        {history.map((item, index) => (
-          <div key={index} style={{ opacity: 0.7 - (0.1 * index) }}>{item}</div>
-        ))}
-      </div>
-      <div className={styles.display}>
-        <div style={{ fontSize: '0.5em', opacity: 0.7 }}>{equation}</div>
-        {display}
-      </div>
-      <div className={styles.buttons}>
-        <button 
-          className={`${styles.button} ${styles.memory}`} 
-          onClick={() => {
-            setSoundEnabled(!soundEnabled)
-            playSound('clear')
-          }}
-        >
-          {soundEnabled ? '🔊' : '🔇'}
-        </button>
-        <button className={`${styles.button} ${styles.memory}`} onClick={handleMemoryClear}>MC</button>
-        <button className={`${styles.button} ${styles.memory}`} onClick={handleMemoryRecall}>MR</button>
-        <button className={`${styles.button} ${styles.memory}`} onClick={handleMemoryAdd}>M+</button>
-        <button className={`${styles.button} ${styles.clear}`} onClick={handleAllClear}>AC</button>
-        <button className={`${styles.button} ${styles.scientific}`} onClick={() => setScientificMode(!scientificMode)}>
-          {scientificMode ? 'Basic' : 'Sci'}
-        </button>
-
-        {scientificMode && (
-          <>
-            <button className={`${styles.button} ${styles.scientific}`} onClick={() => handleScientificFunction('sin')}>sin</button>
-            <button className={`${styles.button} ${styles.scientific}`} onClick={() => handleScientificFunction('cos')}>cos</button>
-            <button className={`${styles.button} ${styles.scientific}`} onClick={() => handleScientificFunction('tan')}>tan</button>
-            <button className={`${styles.button} ${styles.scientific}`} onClick={() => handleScientificFunction('asin')}>sin⁻¹</button>
-            <button className={`${styles.button} ${styles.scientific}`} onClick={() => handleScientificFunction('acos')}>cos⁻¹</button>
-            <button className={`${styles.button} ${styles.scientific}`} onClick={() => handleScientificFunction('atan')}>tan⁻¹</button>
-            <button className={`${styles.button} ${styles.scientific}`} onClick={() => handleScientificFunction('log')}>log</button>
-            <button className={`${styles.button} ${styles.scientific}`} onClick={() => handleScientificFunction('ln')}>ln</button>
-            <button className={`${styles.button} ${styles.scientific}`} onClick={() => handleScientificFunction('sqrt')}>√</button>
-            <button className={`${styles.button} ${styles.scientific}`} onClick={() => handleScientificFunction('pow')}>x^y</button>
-            <button className={`${styles.button} ${styles.scientific}`} onClick={() => handleScientificFunction('pi')}>π</button>
-            <button className={`${styles.button} ${styles.scientific}`} onClick={() => handleScientificFunction('e')}>e</button>
-            <button className={`${styles.button} ${styles.scientific}`} onClick={() => handleScientificFunction('fact')}>x!</button>
-          </>
+    <>
+      <div className={styles.calculator}>
+        {settings.historyEnabled && (
+          <div className={styles.history}>
+            {history.map((item, index) => (
+              <div key={index} style={{ opacity: 0.7 - (0.1 * index) }}>{item}</div>
+            ))}
+          </div>
         )}
+        <div className={styles.display}>
+          <div style={{ fontSize: '0.5em', opacity: 0.7 }}>{equation}</div>
+          {display}
+        </div>
+        <div className={styles.buttons}>
+          <button 
+            className={`${styles.button} ${styles.memory}`} 
+            onClick={() => setIsSettingsOpen(true)}
+          >
+            ⚙️
+          </button>
+          <button className={`${styles.button} ${styles.memory}`} onClick={handleMemoryClear}>MC</button>
+          <button className={`${styles.button} ${styles.memory}`} onClick={handleMemoryRecall}>MR</button>
+          <button className={`${styles.button} ${styles.memory}`} onClick={handleMemoryAdd}>M+</button>
+          <button className={`${styles.button} ${styles.clear}`} onClick={handleAllClear}>AC</button>
+          <button className={`${styles.button} ${styles.scientific}`} onClick={() => setScientificMode(!scientificMode)}>
+            {scientificMode ? 'Basic' : 'Sci'}
+          </button>
 
-        <button className={styles.button} onClick={() => handleNumber('7')}>7</button>
-        <button className={styles.button} onClick={() => handleNumber('8')}>8</button>
-        <button className={styles.button} onClick={() => handleNumber('9')}>9</button>
-        <button className={`${styles.button} ${styles.operator}`} onClick={() => handleOperator('/')}>/</button>
-        <button className={`${styles.button} ${styles.scientific}`} onClick={handleBackspace}>⌫</button>
+          {scientificMode && (
+            <>
+              <button className={`${styles.button} ${styles.scientific}`} onClick={() => handleScientificFunction('sin')}>sin</button>
+              <button className={`${styles.button} ${styles.scientific}`} onClick={() => handleScientificFunction('cos')}>cos</button>
+              <button className={`${styles.button} ${styles.scientific}`} onClick={() => handleScientificFunction('tan')}>tan</button>
+              <button className={`${styles.button} ${styles.scientific}`} onClick={() => handleScientificFunction('asin')}>sin⁻¹</button>
+              <button className={`${styles.button} ${styles.scientific}`} onClick={() => handleScientificFunction('acos')}>cos⁻¹</button>
+              <button className={`${styles.button} ${styles.scientific}`} onClick={() => handleScientificFunction('atan')}>tan⁻¹</button>
+              <button className={`${styles.button} ${styles.scientific}`} onClick={() => handleScientificFunction('log')}>log</button>
+              <button className={`${styles.button} ${styles.scientific}`} onClick={() => handleScientificFunction('ln')}>ln</button>
+              <button className={`${styles.button} ${styles.scientific}`} onClick={() => handleScientificFunction('sqrt')}>√</button>
+              <button className={`${styles.button} ${styles.scientific}`} onClick={() => handleScientificFunction('pow')}>x^y</button>
+              <button className={`${styles.button} ${styles.scientific}`} onClick={() => handleScientificFunction('pi')}>π</button>
+              <button className={`${styles.button} ${styles.scientific}`} onClick={() => handleScientificFunction('e')}>e</button>
+              <button className={`${styles.button} ${styles.scientific}`} onClick={() => handleScientificFunction('fact')}>x!</button>
+            </>
+          )}
 
-        <button className={styles.button} onClick={() => handleNumber('4')}>4</button>
-        <button className={styles.button} onClick={() => handleNumber('5')}>5</button>
-        <button className={styles.button} onClick={() => handleNumber('6')}>6</button>
-        <button className={`${styles.button} ${styles.operator}`} onClick={() => handleOperator('×')}>×</button>
-        <button className={`${styles.button} ${styles.scientific}`} onClick={() => handleScientificFunction('pow')}>x^y</button>
+          <button className={styles.button} onClick={() => handleNumber('7')}>7</button>
+          <button className={styles.button} onClick={() => handleNumber('8')}>8</button>
+          <button className={styles.button} onClick={() => handleNumber('9')}>9</button>
+          <button className={`${styles.button} ${styles.operator}`} onClick={() => handleOperator('/')}>/</button>
+          <button className={`${styles.button} ${styles.scientific}`} onClick={handleBackspace}>⌫</button>
 
-        <button className={styles.button} onClick={() => handleNumber('1')}>1</button>
-        <button className={styles.button} onClick={() => handleNumber('2')}>2</button>
-        <button className={styles.button} onClick={() => handleNumber('3')}>3</button>
-        <button className={`${styles.button} ${styles.operator}`} onClick={() => handleOperator('-')}>-</button>
-        <button className={`${styles.button} ${styles.scientific}`} onClick={() => handleScientificFunction('sqrt')}>√</button>
+          <button className={styles.button} onClick={() => handleNumber('4')}>4</button>
+          <button className={styles.button} onClick={() => handleNumber('5')}>5</button>
+          <button className={styles.button} onClick={() => handleNumber('6')}>6</button>
+          <button className={`${styles.button} ${styles.operator}`} onClick={() => handleOperator('×')}>×</button>
+          <button className={`${styles.button} ${styles.scientific}`} onClick={() => handleScientificFunction('pow')}>x^y</button>
 
-        <button className={styles.button} onClick={() => handleNumber('0')}>0</button>
-        <button className={styles.button} onClick={() => handleNumber('.')}>.</button>
-        <button className={`${styles.button} ${styles.equals}`} onClick={handleEquals}>=</button>
-        <button className={`${styles.button} ${styles.operator}`} onClick={() => handleOperator('+')}>+</button>
-        <button className={`${styles.button} ${styles.scientific}`} onClick={() => handleScientificFunction('fact')}>x!</button>
+          <button className={styles.button} onClick={() => handleNumber('1')}>1</button>
+          <button className={styles.button} onClick={() => handleNumber('2')}>2</button>
+          <button className={styles.button} onClick={() => handleNumber('3')}>3</button>
+          <button className={`${styles.button} ${styles.operator}`} onClick={() => handleOperator('-')}>-</button>
+          <button className={`${styles.button} ${styles.scientific}`} onClick={() => handleScientificFunction('sqrt')}>√</button>
+
+          <button className={styles.button} onClick={() => handleNumber('0')}>0</button>
+          <button className={styles.button} onClick={() => handleNumber('.')}>.</button>
+          <button className={`${styles.button} ${styles.equals}`} onClick={handleEquals}>=</button>
+          <button className={`${styles.button} ${styles.operator}`} onClick={() => handleOperator('+')}>+</button>
+          <button className={`${styles.button} ${styles.scientific}`} onClick={() => handleScientificFunction('fact')}>x!</button>
+        </div>
       </div>
-    </div>
+      <Settings
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        settings={settings}
+        onSettingsChange={setSettings}
+      />
+    </>
   )
 }
 
