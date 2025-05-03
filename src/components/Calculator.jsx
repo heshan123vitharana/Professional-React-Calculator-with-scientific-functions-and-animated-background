@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import Settings from './Settings'
+import useLocalStorage from '../hooks/useLocalStorage'
 import styles from '../styles/App.module.css'
 
 function Calculator() {
@@ -10,7 +11,7 @@ function Calculator() {
   const [lastResult, setLastResult] = useState(null)
   const [scientificMode, setScientificMode] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-  const [settings, setSettings] = useState({
+  const [settings, setSettings] = useLocalStorage('calculatorSettings', {
     soundEnabled: true,
     historyEnabled: true,
     particlesEnabled: true,
