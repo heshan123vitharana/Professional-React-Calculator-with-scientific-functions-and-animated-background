@@ -8,8 +8,34 @@ function Calculator() {
   const [history, setHistory] = useState([])
   const [lastResult, setLastResult] = useState(null)
   const [scientificMode, setScientificMode] = useState(false)
+  const [soundEnabled, setSoundEnabled] = useState(true)
+
+  const playSound = (type) => {
+    if (!soundEnabled) return
+
+    const audio = new Audio()
+    switch (type) {
+      case 'number':
+        audio.src = '/sounds/click.mp3'
+        break
+      case 'operator':
+        audio.src = '/sounds/operator.mp3'
+        break
+      case 'equals':
+        audio.src = '/sounds/equals.mp3'
+        break
+      case 'clear':
+        audio.src = '/sounds/clear.mp3'
+        break
+      default:
+        audio.src = '/sounds/click.mp3'
+    }
+    audio.volume = 0.3
+    audio.play().catch(() => {})
+  }
 
   const handleNumber = (number) => {
+    playSound('number')
     if (display === '0' || lastResult !== null) {
       setDisplay(number)
       setLastResult(null)
@@ -19,6 +45,7 @@ function Calculator() {
   }
 
   const handleOperator = (operator) => {
+    playSound('operator')
     if (lastResult !== null) {
       setEquation(lastResult + ' ' + operator + ' ')
       setDisplay('0')
@@ -93,6 +120,7 @@ function Calculator() {
   }
 
   const handleEquals = () => {
+    playSound('equals')
     try {
       const fullEquation = equation + display
       const evaluableEquation = fullEquation
@@ -115,6 +143,7 @@ function Calculator() {
   }
 
   const handleClear = () => {
+    playSound('clear')
     setDisplay('0')
     setEquation('')
     setLastResult(null)
@@ -182,6 +211,15 @@ function Calculator() {
         {display}
       </div>
       <div className={styles.buttons}>
+        <button 
+          className={`${styles.button} ${styles.memory}`} 
+          onClick={() => {
+            setSoundEnabled(!soundEnabled)
+            playSound('clear')
+          }}
+        >
+          {soundEnabled ? '🔊' : '🔇'}
+        </button>
         <button className={`${styles.button} ${styles.memory}`} onClick={handleMemoryClear}>MC</button>
         <button className={`${styles.button} ${styles.memory}`} onClick={handleMemoryRecall}>MR</button>
         <button className={`${styles.button} ${styles.memory}`} onClick={handleMemoryAdd}>M+</button>
