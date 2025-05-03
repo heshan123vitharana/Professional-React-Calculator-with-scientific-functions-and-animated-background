@@ -23,7 +23,7 @@ A modern, feature-rich calculator built with React, featuring a beautiful animat
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/react-calculator.git
+git clone https://github.com/heshan123vitharana/react-calculator.git
 cd react-calculator
 ```
 
