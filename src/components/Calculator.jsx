@@ -1,6 +1,14 @@
 import { useState, useEffect, useCallback } from 'react'
 import Settings from './Settings'
 import useLocalStorage from '../hooks/useLocalStorage'
+import {
+  isValidNumber,
+  isValidOperator,
+  formatNumber,
+  validateEquation,
+  sanitizeInput,
+  handleError
+} from '../utils/validation'
 import styles from '../styles/App.module.css'
 
 function Calculator() {
@@ -54,16 +62,24 @@ function Calculator() {
 
   const handleNumber = (number) => {
     playSound('number')
+    const sanitizedNumber = sanitizeInput(number)
+    if (!sanitizedNumber) return
+
     if (display === '0' || lastResult !== null) {
-      setDisplay(number)
+      setDisplay(sanitizedNumber)
       setLastResult(null)
     } else if (display.length < 12) {
-      setDisplay(display + number)
+      const newDisplay = display + sanitizedNumber
+      if (isValidNumber(newDisplay)) {
+        setDisplay(newDisplay)
+      }
     }
   }
 
   const handleOperator = (operator) => {
+    if (!isValidOperator(operator)) return
     playSound('operator')
+
     if (lastResult !== null) {
       setEquation(lastResult + ' ' + operator + ' ')
       setDisplay('0')
@@ -141,15 +157,21 @@ function Calculator() {
     playSound('equals')
     try {
       const fullEquation = equation + display
+      if (!validateEquation(fullEquation)) {
+        throw new Error('Invalid equation')
+      }
+
       const evaluableEquation = fullEquation
         .replace(/×/g, '*')
         .replace(/\^/g, '**')
       
       const result = eval(evaluableEquation)
-      const formattedResult = Number.isInteger(result) 
-        ? result.toString()
-        : parseFloat(result.toFixed(8)).toString()
+      const formattedResult = formatNumber(result.toString())
       
+      if (formattedResult === 'Error') {
+        throw new Error('Invalid result')
+      }
+
       if (settings.historyEnabled) {
         setHistory(prev => [...prev, `${fullEquation} = ${formattedResult}`].slice(-5))
       }
@@ -157,8 +179,7 @@ function Calculator() {
       setDisplay(formattedResult)
       setEquation('')
     } catch (error) {
-      setDisplay('Error')
-      setTimeout(() => setDisplay('0'), 2000)
+      handleError(error, setDisplay)
     }
   }
 
