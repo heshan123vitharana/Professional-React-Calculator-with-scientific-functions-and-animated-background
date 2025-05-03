@@ -1,9 +1,14 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Calculator from './components/Calculator'
 import styles from './styles/App.module.css'
 
 function App() {
   const canvasRef = useRef(null)
+  const [theme, setTheme] = useState('dark')
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+  }, [theme])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -75,10 +80,17 @@ function App() {
     }
   }, [])
 
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'dark' ? 'light' : 'dark')
+  }
+
   return (
     <div className={styles.app}>
       <canvas ref={canvasRef} className={styles.canvas} />
       <div className={styles.content}>
+        <button className={styles.themeToggle} onClick={toggleTheme}>
+          {theme === 'dark' ? '🌞' : '🌙'}
+        </button>
         <Calculator />
       </div>
     </div>
